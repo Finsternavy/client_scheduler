@@ -145,7 +145,42 @@ namespace client_scheduler.Services
 
                 var deleted = DatabaseHelper.ExecuteNonQuery(query, parameters);
                 response.success = deleted == 1 ? true : false;
-                response.message = deleted == 1 ? "Deleted succesfully" : "Something went wrong. Appointment not cancelled.";
+                response.message = deleted == 1 ? "Appointment cancelled succesfully" : "Something went wrong. Appointment not cancelled.";
+            }
+            catch (Exception ex)
+            {
+                response.success = false;
+                response.message = ex.Message;
+            }
+
+            return response;
+        }
+
+        public Response DeleteAllCustomerAppointments(int customerId)
+        {
+            Response response = new Response();
+
+            if (customerId <= 0)
+            {
+                response.success = false;
+                response.message = "Invalid customer Id.";
+                return response;
+            }
+
+            string query = $"DELETE FROM appointment WHERE customerId = '{customerId}';";
+            try
+            {
+                int rowsAffected = DatabaseHelper.ExecuteNonQuery(query);
+                if (rowsAffected > 0)
+                {
+                    response.success = true;
+                    response.message = $"{rowsAffected} appointments for the customer have been deleted.";
+                }
+                else
+                {
+                    response.success = true;
+                    response.message = "No appointments found for the specified customer.";
+                }
             }
             catch (Exception ex)
             {

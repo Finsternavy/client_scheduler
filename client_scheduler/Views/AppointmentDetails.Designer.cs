@@ -35,8 +35,6 @@ namespace client_scheduler.Views
             cancelBtn = new Button();
             saveBtn = new Button();
             warningLabel = new Label();
-            selectTimeSlotBtn = new Button();
-            appointmentTime = new Label();
             newAppointmentBtn = new Button();
             typeLabel = new Label();
             typeSelect = new ComboBox();
@@ -44,6 +42,12 @@ namespace client_scheduler.Views
             locationTextBox = new TextBox();
             urlLabel = new Label();
             urlTextBox = new TextBox();
+            startTimeLabel = new Label();
+            endTimeLabel = new Label();
+            appointmentDateLabel = new Label();
+            appointmentDatePicker = new DateTimePicker();
+            startDateTimePicker = new DateTimePicker();
+            endDateTimePicker = new DateTimePicker();
             SuspendLayout();
             // 
             // listBoxLabel
@@ -114,6 +118,7 @@ namespace client_scheduler.Views
             appointmentTitleTextBox.ForeColor = Color.White;
             appointmentTitleTextBox.Location = new Point(79, 147);
             appointmentTitleTextBox.Name = "appointmentTitleTextBox";
+            appointmentTitleTextBox.PlaceholderText = "Appointment Title";
             appointmentTitleTextBox.Size = new Size(534, 25);
             appointmentTitleTextBox.TabIndex = 0;
             appointmentTitleTextBox.Text = "Appointment Title";
@@ -164,28 +169,6 @@ namespace client_scheduler.Views
             warningLabel.Size = new Size(240, 36);
             warningLabel.TabIndex = 6;
             warningLabel.Text = "Warning label";
-            // 
-            // selectTimeSlotBtn
-            // 
-            selectTimeSlotBtn.FlatStyle = FlatStyle.Flat;
-            selectTimeSlotBtn.ForeColor = Color.White;
-            selectTimeSlotBtn.Location = new Point(310, 342);
-            selectTimeSlotBtn.Name = "selectTimeSlotBtn";
-            selectTimeSlotBtn.Size = new Size(120, 30);
-            selectTimeSlotBtn.TabIndex = 7;
-            selectTimeSlotBtn.Text = "Select Time Slot";
-            selectTimeSlotBtn.Click += ShowTimeSlotSelector;
-            // 
-            // appointmentTime
-            // 
-            appointmentTime.BackColor = Color.White;
-            appointmentTime.Font = new Font("Arial", 16F, FontStyle.Bold);
-            appointmentTime.ForeColor = Color.Black;
-            appointmentTime.Location = new Point(427, 342);
-            appointmentTime.Name = "appointmentTime";
-            appointmentTime.Size = new Size(186, 30);
-            appointmentTime.TabIndex = 8;
-            appointmentTime.Text = "12:00 - 12:15 PM";
             // 
             // newAppointmentBtn
             // 
@@ -258,6 +241,64 @@ namespace client_scheduler.Views
             urlTextBox.TabIndex = 14;
             urlTextBox.Text = "https://";
             // 
+            // startTimeLabel
+            // 
+            startTimeLabel.ForeColor = Color.White;
+            startTimeLabel.Location = new Point(403, 330);
+            startTimeLabel.Name = "startTimeLabel";
+            startTimeLabel.Size = new Size(100, 16);
+            startTimeLabel.TabIndex = 16;
+            startTimeLabel.Text = "Start Time";
+            // 
+            // endTimeLabel
+            // 
+            endTimeLabel.ForeColor = Color.White;
+            endTimeLabel.Location = new Point(511, 328);
+            endTimeLabel.Name = "endTimeLabel";
+            endTimeLabel.Size = new Size(100, 16);
+            endTimeLabel.TabIndex = 17;
+            endTimeLabel.Text = "End Time";
+            // 
+            // appointmentDateLabel
+            // 
+            appointmentDateLabel.ForeColor = Color.White;
+            appointmentDateLabel.Location = new Point(287, 328);
+            appointmentDateLabel.Name = "appointmentDateLabel";
+            appointmentDateLabel.Size = new Size(110, 16);
+            appointmentDateLabel.TabIndex = 18;
+            appointmentDateLabel.Text = "Appointment Date";
+            // 
+            // appointmentDatePicker
+            // 
+            appointmentDatePicker.Format = DateTimePickerFormat.Short;
+            appointmentDatePicker.Location = new Point(287, 346);
+            appointmentDatePicker.Name = "appointmentDatePicker";
+            appointmentDatePicker.Size = new Size(110, 23);
+            appointmentDatePicker.TabIndex = 15;
+            appointmentDatePicker.ValueChanged += AppointmentDateChanged;
+            // 
+            // startDateTimePicker
+            // 
+            startDateTimePicker.CustomFormat = "hh:mm tt";
+            startDateTimePicker.Format = DateTimePickerFormat.Time;
+            startDateTimePicker.Location = new Point(403, 346);
+            startDateTimePicker.Name = "startDateTimePicker";
+            startDateTimePicker.ShowUpDown = true;
+            startDateTimePicker.Size = new Size(102, 23);
+            startDateTimePicker.TabIndex = 16;
+            startDateTimePicker.ValueChanged += StartTimeChanged;
+            // 
+            // endDateTimePicker
+            // 
+            endDateTimePicker.CustomFormat = "hh:mm tt";
+            endDateTimePicker.Format = DateTimePickerFormat.Time;
+            endDateTimePicker.Location = new Point(511, 346);
+            endDateTimePicker.Name = "endDateTimePicker";
+            endDateTimePicker.ShowUpDown = true;
+            endDateTimePicker.Size = new Size(102, 23);
+            endDateTimePicker.TabIndex = 17;
+            endDateTimePicker.ValueChanged += EndTimeChanged;
+            // 
             // AppointmentDetails
             // 
             BackColor = Color.FromArgb(33, 33, 33);
@@ -275,13 +316,17 @@ namespace client_scheduler.Views
             Controls.Add(customerNameSelect);
             Controls.Add(customerPhoneLabel);
             Controls.Add(customerPhoneTextBox);
+            Controls.Add(appointmentDatePicker);
             Controls.Add(appointmentTitleTextBox);
             Controls.Add(appointmentDescriptionTextBox);
             Controls.Add(cancelBtn);
             Controls.Add(saveBtn);
             Controls.Add(warningLabel);
-            Controls.Add(selectTimeSlotBtn);
-            Controls.Add(appointmentTime);
+            Controls.Add(startTimeLabel);
+            Controls.Add(endTimeLabel);
+            Controls.Add(appointmentDateLabel);
+            Controls.Add(startDateTimePicker);
+            Controls.Add(endDateTimePicker);
             Name = "AppointmentDetails";
             ResumeLayout(false);
             PerformLayout();
@@ -298,8 +343,6 @@ namespace client_scheduler.Views
         private Button cancelBtn;
         private Button saveBtn;
         private Label warningLabel;
-        private Button selectTimeSlotBtn;
-        private Label appointmentTime;
         private Button newAppointmentBtn;
         private Label typeLabel;
         private ComboBox typeSelect;
@@ -307,5 +350,11 @@ namespace client_scheduler.Views
         private TextBox locationTextBox;
         private Label urlLabel;
         private TextBox urlTextBox;
+        private Label startTimeLabel;
+        private Label endTimeLabel;
+        private Label appointmentDateLabel;
+        private DateTimePicker appointmentDatePicker;
+        private DateTimePicker startDateTimePicker;
+        private DateTimePicker endDateTimePicker;
     }
 }

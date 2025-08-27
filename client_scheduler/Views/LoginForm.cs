@@ -7,6 +7,8 @@ using client_scheduler.Services;
 using client_scheduler.Models;
 using client_scheduler.Localization;
 using client_scheduler.Views;
+using Microsoft.VisualBasic.ApplicationServices;
+using client_scheduler.Models;
 
 namespace client_scheduler
 {
@@ -15,7 +17,7 @@ namespace client_scheduler
         private AuthServices _authService = new AuthServices();
 
         string activeMessage = null;
-        string activeUser = null;
+        public AppUser activeUser = new AppUser();
         public LoginForm()
         {
             InitializeComponent();
@@ -79,7 +81,7 @@ namespace client_scheduler
                 switch(activeMessage)
                 {
                     case "success":
-                        loginResponseMessage.Text = LocalizationHelper.GetString("Welcome_Text", activeUser) + " " + LocalizationHelper.GetString("Login_Success");
+                        loginResponseMessage.Text = LocalizationHelper.GetString("Welcome_Text", activeUser.Name) + " " + LocalizationHelper.GetString("Login_Success");
                         break;
                     case "failed":
                         loginResponseMessage.Text = LocalizationHelper.GetString("Login_Failed");
@@ -129,10 +131,23 @@ namespace client_scheduler
                     response = _authService.Authenticate(attempt);
                     if (response.success)
                     {
-                        activeUser = response.data.Rows[0]["userName"].ToString();
+                        activeUser.Name = response.data.Rows[0]["userName"].ToString();
+                        activeUser.Id = Convert.ToInt32(response.data.Rows[0]["userId"].ToString());
                         response.message = LocalizationHelper.GetString("Welcome_Text", response.data.Rows[0]["userName"]) + " " + LocalizationHelper.GetString("Login_Success");
                         activeMessage = "success";
-                        Dashboard dashboard = new Dashboard();
+                        // add a log when the user logged in
+                        try
+                        {
+                            // Login_History should save in bin/Debug/net8.0-windows/Login_History.txt
+                            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                            string logEntry = $"{timestamp} - User {activeUser.Name} logged in successfully.{Environment.NewLine}";
+                            File.AppendAllText("Login_History.txt", logEntry);
+                        } 
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error logging user login: " + ex.Message);
+                        }
+                    Dashboard dashboard = new Dashboard(activeUser);
                         this.Hide();
                         dashboard.Show();
 

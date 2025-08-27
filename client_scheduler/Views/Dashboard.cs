@@ -20,14 +20,17 @@ namespace client_scheduler.Views
         private DateTime currentDate;
         private DataGridView calendarGrid;
         public List<Appointment> appointmentList;
-        public Dashboard()
+        public AppUser activeUser = new AppUser();
+        public Dashboard(AppUser user)
         {
+            this.activeUser = user;
             InitializeComponent();
             InitializeCalendarView();
             currentDate = DateTime.Now;
             appointmentList = new List<Appointment>();
             LoadAppointments();
             UpdateCalendarGrid();
+            CheckForUpcomingAppointments();
         }
 
         private void InitializeCalendarView()
@@ -103,6 +106,10 @@ namespace client_scheduler.Views
 
         private void UpdateCalendarGrid()
         {
+            if (monthLabel != null)
+            {
+                monthLabel.Text = currentDate.ToString("MMMM yyyy");
+            }
             // clear existing
             for (int row = 0; row < 6; row++)
             {
@@ -164,6 +171,56 @@ namespace client_scheduler.Views
             }
         }
 
+        private void PrevMonth_Click (object sender, EventArgs e)
+        {
+            DateTime previousMonth = currentDate.AddMonths(-1);
+
+            DateTime currentMonth = DateTime.Now.Date;
+
+            if(previousMonth.Year > currentMonth.Year || previousMonth.Year == currentMonth.Year && previousMonth.Month >= currentMonth.Month)
+            {
+                currentDate = previousMonth;
+                UpdateCalendarGrid();
+            }
+            else
+            {
+                MessageBox.Show("You cannot view months prior to the current month.");
+                return;
+            }
+
+            UpdateCalendarGrid();
+        }
+
+        private void NextMonth_Click(Object sender, EventArgs e)
+        {
+            currentDate = currentDate.AddMonths(1);
+            UpdateCalendarGrid();
+        }
+
+        private void reportsBtn_Click(object sender, EventArgs e)
+        {
+            Reports reportsForm = new Reports();
+            reportsForm.ShowDialog();
+        }
+
+        private void CheckForUpcomingAppointments()
+        {
+            DateTime now = DateTime.Now;
+            DateTime next15 = now.AddMinutes(15);
+            var upcomingAppointments = appointmentList.Where(x => x.start >= now && x.start <= next15).ToList();
+
+            if (upcomingAppointments.Any())
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Upcoming Appointments in the next 15 minutes:");
+                foreach (var appointment in upcomingAppointments)
+                {
+                    sb.AppendLine($"{appointment.title} at {appointment.start.ToString("hh:mm tt")}");
+                }
+                MessageBox.Show(sb.ToString(), "Upcoming Appointments");
+            }
+        }
+
         private void CalendarGrid_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
@@ -178,7 +235,7 @@ namespace client_scheduler.Views
                     DateTime clickedDay = GetDateFromCell(e.RowIndex, e.ColumnIndex);
                     if (clickedDay.DayOfWeek == DayOfWeek.Saturday || clickedDay.DayOfWeek == DayOfWeek.Sunday)
                     {
-                        MessageBox.Show("No appointment available on weekends");
+                        MessageBox.Show("Appointments are only available Mon - Fri 9:00 AM - 5:00 PM EST");
                     }
                     else
                     {
@@ -223,9 +280,16 @@ namespace client_scheduler.Views
 
         private void OnAppointmentDeleted(object sender, string message)
         {
-            MessageBox.Show(message);
+            //MessageBox.Show(message);
             LoadAppointments();
             UpdateCalendarGrid();
+        }
+
+        private void OnCustomerDeleted(object sender, string message)
+        {
+            LoadAppointments();
+            UpdateCalendarGrid();
+            MessageBox.Show("Dashboard received customer deletion notification. Calender should have been updated.");
         }
 
         private void UpdateAppointmentInDatabase(Appointment appointment)
@@ -311,6 +375,9 @@ namespace client_scheduler.Views
         private void customerRecordsBtn_Click(object sender, EventArgs e)
         {
             // open customer editor form
+            CustomerRecords customerRecords = new CustomerRecords(activeUser);
+            customerRecords.CustomerDeleted += OnCustomerDeleted;
+            customerRecords.ShowDialog();
         }
     }
 }

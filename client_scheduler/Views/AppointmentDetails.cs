@@ -27,6 +27,9 @@ namespace client_scheduler.Views
         private Appointment activeAppointment = new Appointment();
         private Customer activeCustomer = new Customer();
         private List<Customer> customers = new List<Customer>();
+        private DateTime MinTime;
+        private DateTime MaxTime;
+        private bool initialized = false;
         public AppointmentDetails(DateTime date, List<Appointment> appointments)
         {
             InitializeComponent();
@@ -40,6 +43,105 @@ namespace client_scheduler.Views
             this.Size = new Size(700, 600);
             this.Text = $"Appointments for {SelectedDate.ToString("MMMM dd, yyyy")}";
             this.StartPosition = FormStartPosition.CenterParent;
+
+            // convert 9am eastern to user local time
+            DateTime easternStart = TimeZoneHelper.ConvertFromEastern(new DateTime(SelectedDate.Year, SelectedDate.Month, SelectedDate.Day, 9, 0, 0));
+            DateTime easternEnd = TimeZoneHelper.ConvertFromEastern(new DateTime(SelectedDate.Year, SelectedDate.Month, SelectedDate.Day, 17, 0, 0));
+            MinTime = easternStart;
+            MaxTime = easternEnd;
+            startDateTimePicker.Format = DateTimePickerFormat.Time;
+            startDateTimePicker.ShowUpDown = true;
+            startDateTimePicker.CustomFormat = "hh:mm tt";
+
+            endDateTimePicker.Format = DateTimePickerFormat.Time;
+            endDateTimePicker.ShowUpDown = true;
+            endDateTimePicker.CustomFormat = "hh:mm tt";
+            /*DateTimePicker startDateTimePicker = new DateTimePicker
+            {
+                Format = DateTimePickerFormat.Time,
+                ShowUpDown = true,
+                Location = new Point(376, 346),
+                Size = new Size(100, 20),
+                CustomFormat = "hh:mm tt"
+            };
+            DateTimePicker endDateTimePicker = new DateTimePicker
+            {
+                Format = DateTimePickerFormat.Time,
+                ShowUpDown = true,
+                Location = new Point(511, 346),
+                Size = new Size(100, 20),
+                CustomFormat = "hh:mm tt"
+            };
+            this.Controls.Add(startDateTimePicker);
+            this.Controls.Add(endDateTimePicker);
+            startDateTimePicker.ValueChanged += (s, e) =>
+            {
+                if (startDateTimePicker.Value < MinTime || startDateTimePicker.Value > MaxTime)
+                {
+                    MessageBox.Show(Text, "Start time cannot be before 9:00 AM Eastern Time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    startDateTimePicker.Value = MinTime; // Reset to minimum time
+                    endDateTimePicker.Value = MinTime.AddHours(1); // Set end time to one hour after start time
+                    return;
+                }
+                else
+                {
+                    activeAppointment.start = startDateTimePicker.Value;
+                    if (activeAppointment.start.AddHours(1) > MaxTime)
+                    {
+                        endDateTimePicker.Value = MaxTime; // Reset to maximum time
+                        activeAppointment.end = MaxTime; // Set end time to maximum time
+                    }
+                    else
+                    {
+                        endDateTimePicker.Value = activeAppointment.start.AddHours(1); // Set end time to one hour after start time
+                        activeAppointment.end = activeAppointment.start.AddHours(1);
+                    }
+                }
+            };
+            endDateTimePicker.ValueChanged += (s, e) =>
+            {
+                if (endDateTimePicker.Value < MinTime || endDateTimePicker.Value > MaxTime)
+                {
+                    MessageBox.Show(Text, "End time cannot be after 5:00 PM Eastern Time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    if (startDateTimePicker.Value.AddHours(1) > MaxTime)
+                    {
+                        endDateTimePicker.Value = MaxTime; // Reset to maximum time
+                    }
+                    else
+                    {
+                        endDateTimePicker.Value = startDateTimePicker.Value.AddHours(1); // Set end time to one hour after start time
+                    }
+                    return;
+                }
+                else
+                {
+                    if (endDateTimePicker.Value <= startDateTimePicker.Value)
+                    {
+                        MessageBox.Show(Text, "End time must be after start time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        if (startDateTimePicker.Value.AddHours(1) > MaxTime)
+                        {
+                            endDateTimePicker.Value = MaxTime; // Reset to maximum time
+                        }
+                        else
+                        {
+                            endDateTimePicker.Value = startDateTimePicker.Value.AddHours(1); // Set end time to one hour after start time
+                        }
+                    }
+                    else
+                    {
+                        if (startDateTimePicker.Value.AddHours(1) > MaxTime)
+                        {
+                            endDateTimePicker.Value = MaxTime; // Reset to maximum time
+                            activeAppointment.end = MaxTime; // Set end time to maximum time
+                            return;
+                        } 
+                        activeAppointment.end = endDateTimePicker.Value;
+                    }
+                }
+
+            };
+            
+            */
 
             warningLabel.Text = "";
 
@@ -93,6 +195,84 @@ namespace client_scheduler.Views
             else
             {
                 StageNewAppointment();
+            }
+            initialized = true;
+        }
+
+        private void StartTimeChanged(object sender, EventArgs e)
+        {
+            DateTimePicker startPicker = (DateTimePicker)sender;
+            if (initialized == true)
+            {
+                DateTime newTime = new DateTime(appointmentDatePicker.Value.Year, appointmentDatePicker.Value.Month, appointmentDatePicker.Value.Day, startPicker.Value.Hour, startPicker.Value.Minute, 0);
+                if (startPicker.Value < MinTime || startPicker.Value > MaxTime)
+                {
+                    MessageBox.Show("Start time must be between 9:00 AM and 5:00 PM Eastern Time.", "Invalid Start Time", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    startPicker.Value = MinTime; // Reset to minimum time
+                    activeAppointment.start = MinTime; // Set start time to minimum time
+                }
+                else
+                {
+                    if (newTime >= MaxTime)
+                    {
+                        newTime = new DateTime(newTime.Year, newTime.Month, newTime.Day, newTime.Hour - 1, newTime.Minute + 45, 0);
+                        startPicker.Value = newTime;
+                    }
+                    // if its in bounds, change it
+                    activeAppointment.start = newTime;
+                    activeAppointment.end = newTime.AddHours(1);
+                    endDateTimePicker.Value = newTime.AddHours(1);
+                    // check that ending is still in bounds
+                    if (activeAppointment.end > MaxTime)
+                    {
+                        endDateTimePicker.Value = MaxTime; // Reset to maximum time
+                        activeAppointment.end = MaxTime; // Set end time to maximum time
+                    }
+                }
+            }
+        }
+
+        private void EndTimeChanged(object sender, EventArgs e)
+        {
+            if (initialized == true)
+            {
+                DateTimePicker endPicker = (DateTimePicker)sender;
+                if (endPicker.Value < MinTime || endPicker.Value > MaxTime)
+                {
+                    MessageBox.Show("End time must be between 9:00 AM and 5:00 PM Eastern Time.", "Invalid End Time", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    if (activeAppointment.start.AddHours(1) > MaxTime)
+                    {
+                        endPicker.Value = MaxTime; // Reset to maximum time
+                        activeAppointment.end = MaxTime; // Set end time to maximum time
+                    }
+                    else
+                    {
+                        endPicker.Value = activeAppointment.start.AddHours(1); // Set end time to one hour after start time
+                        activeAppointment.end = activeAppointment.start.AddHours(1); // Set end time to one hour after start time
+                    }
+
+                }
+                else
+                {
+                    if (endPicker.Value <= activeAppointment.start)
+                    {
+                        MessageBox.Show("End time must be after start time.", "Invalid End Time", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        if (activeAppointment.start.AddHours(1) > MaxTime)
+                        {
+                            endPicker.Value = MaxTime; // Reset to maximum time
+                            activeAppointment.end = MaxTime; // Set end time to maximum time
+                        }
+                        else
+                        { 
+                            activeAppointment.end = startDateTimePicker.Value.AddHours(1); // Set end time to one hour after start time
+                            endPicker.Value = startDateTimePicker.Value.AddHours(1);
+                        }
+                    }
+                    else
+                    {
+                        activeAppointment.end = endPicker.Value;
+                    }
+                }
             }
         }
 
@@ -157,14 +337,21 @@ namespace client_scheduler.Views
 
                 }
                 activeAppointment = DayAppointments[0];
+                appointmentDatePicker.Value = activeAppointment.start;
                 MapActiveAppointmentValues(activeAppointment, activeCustomer);
                 listBox.SelectedIndex = 0;
             }
+            this.initialized = true;
         }
 
         private void StageNewAppointment()
         {
-            DateTime nowEastern = TimeZoneHelper.ConvertToEastern(DateTime.Now);
+            // convert 9am eastern to user local time
+            DateTime easternStart = TimeZoneHelper.ConvertFromEastern(new DateTime(SelectedDate.Year, SelectedDate.Month, SelectedDate.Day, 9, 0, 0));
+            DateTime easternEnd = TimeZoneHelper.ConvertFromEastern(new DateTime(SelectedDate.Year, SelectedDate.Month, SelectedDate.Day, 17, 0, 0));
+            
+            activeAppointment.start = easternStart;
+            activeAppointment.end = easternEnd;
             activeAppointment = new Appointment
             {
                 appointmentId = 0,
@@ -178,24 +365,40 @@ namespace client_scheduler.Views
                 url = "www.google.com",
                 start = new DateTime(),
                 end = new DateTime(), // this isn't correct. It should look for the first open slot
-                startEastern = nowEastern,
-                endEastern = nowEastern
+                startEastern = easternStart,
+                endEastern = easternEnd
             };
+            appointmentDatePicker.Value = easternStart;
+            startDateTimePicker.Value = easternStart;
+            endDateTimePicker.Value = easternEnd;
+
+            this.initialized = true;
         }
+
 
         private void MapActiveAppointmentValues(Appointment appointment, Customer customer)
         {
+            
             if (appointment != null)
             {
                 appointmentTitleTextBox.Text = appointment.title;
                 customerNameSelect.SelectedItem = customer.Name;
                 customerPhoneTextBox.Text = customer.Phone;
-                appointmentTime.Text = $"{TimeOnly.FromDateTime(appointment.start):h:mm} - {TimeOnly.FromDateTime(appointment.end):h:mm tt}";
                 appointmentDescriptionTextBox.Text = appointment.description;
                 typeSelect.SelectedItem = appointment.type;
                 urlTextBox.Text = appointment.url;
                 locationTextBox.Text = customer.Address;
                 typeSelect.SelectedItem = appointment.type;
+                if (appointment.start != DateTime.MinValue && appointment.end != DateTime.MinValue)
+                {
+                    startDateTimePicker.Value = appointment.start;
+                    endDateTimePicker.Value = appointment.end;
+                }
+                else
+                {
+                    startDateTimePicker.Value = appointment.start;
+                    endDateTimePicker.Value = appointment.end;
+                }
             }
         }
 
@@ -237,7 +440,7 @@ namespace client_scheduler.Views
 
             if (activeAppointment.title == null || activeAppointment.title == string.Empty)
             {
-                missingList.Add("Customer Id");
+                missingList.Add("Appointment Title");
             }
             if(activeAppointment.type == null || activeAppointment.type == string.Empty)
             {
@@ -270,15 +473,43 @@ namespace client_scheduler.Views
                 valid = false;
                 string errorString = "Please complete the following fields:\n\n";
 
-                foreach()
-                MessageBox.Show(errorString)
+                foreach (var item in missingList)
+                {
+                    errorString += $"{item}\n";
+                }
+                MessageBox.Show(errorString);
             }
 
             return valid;
         }
 
+        private bool OverlappingAppointment()
+        {
+            if (activeAppointment.start == DateTime.MinValue || activeAppointment.end == DateTime.MinValue)
+            {
+                return false; // Cannot overlap if start or end is not set
+            }
+
+            foreach (var appointment in DayAppointments)
+            {
+                if (appointment.appointmentId != activeAppointment.appointmentId) // Ignore the current appointment if updating
+                {
+                    if ((activeAppointment.start < appointment.end && activeAppointment.end > appointment.start))
+                    {
+                        return true; // Overlapping appointment found
+                    }
+                }
+            }
+            return false; // No overlapping appointments
+        }
+
         private void SaveNewAppointment()
         {
+            if (OverlappingAppointment())
+            {
+                MessageBox.Show("Unable to schedule. This appointment overlaps with an existing appointment. Please select a different time.");
+                return;
+            }
             try
             {
                 Response response = _appointmentServices.AddNewAppointment(activeAppointment, activeCustomer);
@@ -331,23 +562,16 @@ namespace client_scheduler.Views
             }
         }
 
-        private void SaveBtn_Click()
+        private void SaveBtn_Click(object sender, EventArgs e)
         {
-            Dictionary<string, object> validation = ValidateAppointment();
-            if ((bool)validation["isValid"] == false)
+            if (!ValidateAppointment())
             {
-                string invalidString = "The following parameters are missing values:\n\n";
-                if (validation["invalidList"] is List<string> invalidList)
-                {
-                    foreach(string error in invalidList)
-                    {
-                        invalidString = $"{invalidString} {error}, ";
-                    }
-                }
-                MessageBox.Show($"{invalidString}");
+                return;
             }
             else
             {
+
+                TrimFields();
                 if (activeCustomer != null && activeCustomer.Id != null && activeAppointment.appointmentId != 0)
                 {
                     UpdateAppointment();
@@ -357,14 +581,52 @@ namespace client_scheduler.Views
                     SaveNewAppointment();
                 }
             }
+        }
 
-
+        private void AppointmentDateChanged(object sender, EventArgs e)
+        {
+            // make sure the date was not changed to a weekend
+            DateTimePicker appointmentDatePicker = (DateTimePicker)sender;
+            if (initialized == true)
+            {
+                if (appointmentDatePicker.Value.DayOfWeek == DayOfWeek.Saturday || appointmentDatePicker.Value.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    MessageBox.Show("Appointments cannot be scheduled on weekends. Please select a weekday.", "Invalid Date", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    appointmentDatePicker.Value = activeAppointment.start;
+                    return;
+                }
+                // make sure the date is not in the past
+                if (appointmentDatePicker.Value.Date < DateTime.Now.Date)
+                {
+                    MessageBox.Show("Appointments cannot be scheduled in the past. Please select a valid date.", "Invalid Date", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    appointmentDatePicker.Value = activeAppointment.start;
+                    return;
+                }
+            }
+            DateTime updatedStart = new DateTime(appointmentDatePicker.Value.Year, appointmentDatePicker.Value.Month, appointmentDatePicker.Value.Day, activeAppointment.start.Hour, activeAppointment.start.Minute, 0);
+            activeAppointment.start = updatedStart;
+            // convert 9am eastern to user local time
+            DateTime easternStart = TimeZoneHelper.ConvertFromEastern(new DateTime(updatedStart.Year, updatedStart.Month, updatedStart.Day, 9, 0, 0));
+            DateTime easternEnd = TimeZoneHelper.ConvertFromEastern(new DateTime(updatedStart.Year, updatedStart.Month, updatedStart.Day, 17, 0, 0));
+            MinTime = easternStart;
+            MaxTime = easternEnd;
 
         }
 
-        private void DeleteSelectedAppointment(ListBox listBox)
+        private void TrimFields()
         {
-            // to-do
+            activeAppointment.title = activeAppointment.title.Trim();
+            if (activeAppointment.description != null)
+            {
+                activeAppointment.description = activeAppointment.description.Trim();
+            }
+            if (activeAppointment.url != null)
+            {
+                activeAppointment.url = activeAppointment.url.Trim();
+            }
+
+            // Phone, Appointment Location, Type, Start Time and End Time do not need
+            // to be trimmed as they are read only. 
         }
 
         private void UpdateActiveTitle(object sender, EventArgs e)
@@ -373,35 +635,6 @@ namespace client_scheduler.Views
             {
                 activeAppointment.title = appointmentTitleTextBox.Text;
             }
-        }
-
-        private void ShowTimeSlotSelector(object sender, EventArgs e)
-        {
-            try
-            {
-                TimeSlotSelectorForm timeSlotForm = new TimeSlotSelectorForm(SelectedDate, DayAppointments);
-
-                if (timeSlotForm.ShowDialog() == DialogResult.OK)
-                {
-                    activeAppointment.start = SelectedDate.Date.Add(timeSlotForm.SelectedStartTime.ToTimeSpan());
-                    activeAppointment.end = SelectedDate.Date.Add(timeSlotForm.SelectedEndTime.ToTimeSpan());
-
-                    UpdateTimeDisplay();
-
-
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error selecting time slot: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void UpdateTimeDisplay()
-        {
-            TimeOnly startTime = TimeOnly.FromDateTime(activeAppointment.start);
-            TimeOnly endTime = TimeOnly.FromDateTime(activeAppointment.end);
-            appointmentTime.Text = $"{startTime:h:mm}-{endTime:h:mm tt}";
         }
 
         private void CreateNewAppointment(object sender, EventArgs e)

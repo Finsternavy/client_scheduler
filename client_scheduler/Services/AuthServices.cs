@@ -13,7 +13,7 @@ namespace client_scheduler.Services
     {
         public Response Authenticate(AuthAttempt attempt)
         {
-            string query = "SELECT userId, userName FROM user WHERE userName = '" + attempt.name + "' AND password = '" + attempt.password + "'";
+            string query = $"SELECT userId, userName FROM user WHERE userName = '{ attempt.name }' AND password = '{ attempt.password }';";
             Response response = new Response();
             try
             {
