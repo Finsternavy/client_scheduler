@@ -56,92 +56,6 @@ namespace client_scheduler.Views
             endDateTimePicker.Format = DateTimePickerFormat.Time;
             endDateTimePicker.ShowUpDown = true;
             endDateTimePicker.CustomFormat = "hh:mm tt";
-            /*DateTimePicker startDateTimePicker = new DateTimePicker
-            {
-                Format = DateTimePickerFormat.Time,
-                ShowUpDown = true,
-                Location = new Point(376, 346),
-                Size = new Size(100, 20),
-                CustomFormat = "hh:mm tt"
-            };
-            DateTimePicker endDateTimePicker = new DateTimePicker
-            {
-                Format = DateTimePickerFormat.Time,
-                ShowUpDown = true,
-                Location = new Point(511, 346),
-                Size = new Size(100, 20),
-                CustomFormat = "hh:mm tt"
-            };
-            this.Controls.Add(startDateTimePicker);
-            this.Controls.Add(endDateTimePicker);
-            startDateTimePicker.ValueChanged += (s, e) =>
-            {
-                if (startDateTimePicker.Value < MinTime || startDateTimePicker.Value > MaxTime)
-                {
-                    MessageBox.Show(Text, "Start time cannot be before 9:00 AM Eastern Time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    startDateTimePicker.Value = MinTime; // Reset to minimum time
-                    endDateTimePicker.Value = MinTime.AddHours(1); // Set end time to one hour after start time
-                    return;
-                }
-                else
-                {
-                    activeAppointment.start = startDateTimePicker.Value;
-                    if (activeAppointment.start.AddHours(1) > MaxTime)
-                    {
-                        endDateTimePicker.Value = MaxTime; // Reset to maximum time
-                        activeAppointment.end = MaxTime; // Set end time to maximum time
-                    }
-                    else
-                    {
-                        endDateTimePicker.Value = activeAppointment.start.AddHours(1); // Set end time to one hour after start time
-                        activeAppointment.end = activeAppointment.start.AddHours(1);
-                    }
-                }
-            };
-            endDateTimePicker.ValueChanged += (s, e) =>
-            {
-                if (endDateTimePicker.Value < MinTime || endDateTimePicker.Value > MaxTime)
-                {
-                    MessageBox.Show(Text, "End time cannot be after 5:00 PM Eastern Time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    if (startDateTimePicker.Value.AddHours(1) > MaxTime)
-                    {
-                        endDateTimePicker.Value = MaxTime; // Reset to maximum time
-                    }
-                    else
-                    {
-                        endDateTimePicker.Value = startDateTimePicker.Value.AddHours(1); // Set end time to one hour after start time
-                    }
-                    return;
-                }
-                else
-                {
-                    if (endDateTimePicker.Value <= startDateTimePicker.Value)
-                    {
-                        MessageBox.Show(Text, "End time must be after start time.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        if (startDateTimePicker.Value.AddHours(1) > MaxTime)
-                        {
-                            endDateTimePicker.Value = MaxTime; // Reset to maximum time
-                        }
-                        else
-                        {
-                            endDateTimePicker.Value = startDateTimePicker.Value.AddHours(1); // Set end time to one hour after start time
-                        }
-                    }
-                    else
-                    {
-                        if (startDateTimePicker.Value.AddHours(1) > MaxTime)
-                        {
-                            endDateTimePicker.Value = MaxTime; // Reset to maximum time
-                            activeAppointment.end = MaxTime; // Set end time to maximum time
-                            return;
-                        } 
-                        activeAppointment.end = endDateTimePicker.Value;
-                    }
-                }
-
-            };
-            
-            */
 
             warningLabel.Text = "";
 
@@ -463,7 +377,7 @@ namespace client_scheduler.Views
             {
                 missingList.Add("Customer Name");
             }
-            if (string.IsNullOrEmpty(activeCustomer.Phone))
+            if (string.IsNullOrEmpty(activeCustomer.Phone) || activeCustomer.Phone.Length < 8)
             {
                 missingList.Add("Customer Phone Number");
             }
@@ -642,6 +556,8 @@ namespace client_scheduler.Views
             // new appointment
             activeCustomer = new Customer();
             activeAppointment = new Appointment();
+            activeAppointment.start = MinTime;
+            activeAppointment.end = MinTime.AddHours(1);
             MapActiveAppointmentValues(activeAppointment, activeCustomer);
         }
 

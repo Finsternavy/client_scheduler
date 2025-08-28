@@ -277,6 +277,13 @@ namespace client_scheduler.Views
             {
                 missingList.Add("Customer Phone");
             }
+            if (PhoneIssues())
+            {
+                if (activeCustomer.Country == "USA")
+                missingList.Add("Customer Phone (format: XXX-XXX-XXXX)");
+                if (activeCustomer.Country == "England")
+                    missingList.Add("Customer Phone (format: XXX-XXXX-XXXX)");
+            }
             if (string.IsNullOrEmpty(activeCustomer.City))
             {
                 missingList.Add("Customer City");
@@ -308,6 +315,56 @@ namespace client_scheduler.Views
             }
 
             return valid;
+        }
+
+        private bool PhoneIssues()
+        {
+            // check if activeCustomer.Phone is in the format XXX-XXX-XXXX where X is a digit
+            string phone = activeCustomer.Phone;
+            if (activeCustomer.Country == "USA")
+            {
+                if (phone.Length != 12)
+                    return true;
+
+                // Check first three characters are digits
+                for (int i = 0; i < 12; i++)
+                {
+                    if (i == 3 || i == 7)
+                    {
+                        i++;
+                    }
+                    if (!char.IsDigit(phone[i]))
+                        return true;
+                }
+
+                // Check fourth character is a dash
+                if (phone[3] != '-' || phone[7] != '-')
+                    return true;
+
+                return false;
+            }
+            if (activeCustomer.Country == "England")
+            {
+                // format is XXX-XXXX-XXXX
+                if (phone.Length != 13)
+                    return true;
+                // Check first two characters are digits
+                for (int i = 0; i < 12; i++)
+                {
+                    if (i == 3 || i == 8)
+                    {
+                        i++;
+                    }
+                    if (!char.IsDigit(phone[i]))
+                        return true;
+                }
+                // Check second and seventh characters are a dash
+                if (phone[3] != '-' || phone[8] != '-')
+                    return true;
+
+                return false;
+            }
+            return true;
         }
 
         private void ValidatePhoneChange(object sender, EventArgs e)
